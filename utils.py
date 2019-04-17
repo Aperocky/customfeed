@@ -4,14 +4,23 @@ import time
 class NewsObject:
 
     # A news object in a structured way.
-    def __init__(self, key, href, attributes=None, timestamp=None, summary=None):
-        self.key = key # identify in dictionary. Use title for now.
-        self.href = href
-        self.attrs = attributes # Holds whatever attributes that comes in.
+    def __init__(self, title, href, contents=None):
+        self.title = title
+        self.href = href # Use this as identifier.
+        self.contents = contents # Holds whatever attributes that comes in.
         self.created_time = time.time() # remember created time.
-        self.timestamp = timestamp # Doesn't necessarily needs it.
-        self.summary = summary
         self.weight = 0
+
+    @staticmethod
+    def packContent(summary=None, content=None, timestamp=None, **kwargs):
+        contents = {
+            "summary": summary,
+            "content": content,
+            "timestamp": timestamp
+        }
+        if kwargs:
+            contents.update(kwargs)
+        return contents
 
     def calculate_weights(self):
         # TODO: somehow calculate an importance.

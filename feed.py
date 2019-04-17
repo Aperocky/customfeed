@@ -11,13 +11,13 @@ class Feeder:
         self.threshold = time_threshold # Keep the news for this many seconds.
 
     def crawl(self): # Wrap threading around later.
-        currentReuter = reuters.run() # returns a dictionary of NewsObject.
+        currentReuter = reuters.run() # returns a list of NewsObject.
 
         # space for future crawlers. #
         #                            #
         # space for future crawlers. #
 
-        current = currentReuter
+        current = {e.href: e for e in currentReuter}
         # Updates queue.
         self.queue.update({k:v for k, v in current.items() if k not in self.queue})
 
