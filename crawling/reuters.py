@@ -6,8 +6,11 @@ from multiprocessing.pool import ThreadPool
 
 REUTER_MARKET = "https://www.reuters.com/finance/markets"
 REUTER_HOME = "https://www.reuters.com"
+REUTER_BUSINESS = "https://www.reuters.com/finance"
+REUTER_TECH = "https://www.reuters.com/news/technology"
+REUTER_BREAKINGVIEW = "https://www.reuters.com/breakingviews"
 
-def reuter_extract_headlines(soup):
+def reuter_extract_market_headlines(soup):
     # Return a list of NewsObject
     headlines = []
     # The top story of the block.
@@ -37,14 +40,17 @@ def reuter_extract_headlines(soup):
             print("Error in getting more headlines: {}".format(e))
     return headlines
 
-def reuter_extract_blocks(soup, areaid):
+def reuter_extract_market_blocks(soup, areaid):
     area_news = []
-    contents = soup.select("#{} .story-content".format(areaid))
-    for each in contents:
+    storylist = soup.select("#{} .story-content".format(areaid))
+    for each in storylist:
         try:
             href = REUTER_HOME + each.select("a")[0]["href"]
             title = each.select("h3")[0].text.strip()
-            summary = each.select("p")[0].text
+            try:
+                summary = each.select("p")[0].text
+            except IndexError:
+                summary = None
             timestamp = each.select(".timestamp")[0].text
             contents = NewsObject.packContent(summary=summary, timestamp=timestamp)
             news = NewsObject(title, href, contents)
@@ -52,6 +58,35 @@ def reuter_extract_blocks(soup, areaid):
         except Exception as e:
             print("Error in getting {} data: {}".format(areaid, e))
     return area_news
+
+def reuter_extract_market_subpage():
+    master_list = []
+    soup = get_soup(REUTER_MARKET)
+    master_list.extend(reuter_extract_market_headlines(soup))
+    blocks = ["tab-markets-us", "tab-markets-emea", "tab-markets-asia"]
+    for each in blocks:
+        master_list.extend(reuter_extract_market_blocks(soup, each))
+    return master_list
+
+def reuter_extract_story_subpage(page_url):
+    soup = get_soup(page_url)
+    storylist = soup.select(".story-content")
+    master_list = []
+    for story in storylist:
+        href = REUTER_HOME + story.select("a")[0]["href"]
+        title = story.select(".story-title")[0].text
+        try:
+            summary = story.select("p")[0].text
+        except IndexError:
+            summary = None
+        try:
+            timestamp = story.select(".timestamp")[0].text
+        except IndexError:
+            timestamp = None
+        contents = NewsObject.packContent(summary=summary, timestamp=timestamp)
+        news = NewsObject(title, href, contents)
+        master_list.append(news)
+    return master_list
 
 def get_content(url):
     soup = get_soup(url)
@@ -66,13 +101,18 @@ def add_content_to_news(newsobj):
     newsobj.contents["content"] = content
 
 # process the page REUTER_MARKET.
-def run():
-    soup = get_soup(REUTER_MARKET)
+def run(existing=None):
     master_list = []
-    master_list.extend(reuter_extract_headlines(soup))
-    blocks = ["tab-markets-us", "tab-markets-emea", "tab-markets-asia"]
-    for each in blocks:
-        master_list.extend(reuter_extract_blocks(soup, each))
+    # market page of reuter (that follows a very perculiar layout)
+    master_list.extend(reuter_extract_market_subpage())
+    # 3 different reuter tabs, covering technology, business and breakingview.
+    subpages = [REUTER_TECH, REUTER_BUSINESS, REUTER_BREAKINGVIEW]
+    for page in subpages:
+        master_list.extend(reuter_extract_story_subpage(page))
+    print("{} current news articles found".format(len(master_list)))
+    # Do not repeat crawled articles.
+    if existing is not None:
+        master_list = [art for art in master_list if art.href not in existset]
     pool = ThreadPool(processes=20) # 20 threads at each time.
     pool.map(add_content_to_news, master_list)
     return master_list
