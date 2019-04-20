@@ -32,7 +32,10 @@ def reuter_extract_market_headlines(soup):
             sub = each.select("a")[0]
             title = sub.text
             href = REUTER_HOME + sub["href"]
-            timestamp = each.select(".timestamp")[0].text
+            try:
+                timestamp = each.select(".timestamp")[0].text
+            except IndexError:
+                timestamp = None
             contents= NewsObject.packContent(timestamp=timestamp)
             top = NewsObject(title, href, contents)
             headlines.append(top)
@@ -51,7 +54,10 @@ def reuter_extract_market_blocks(soup, areaid):
                 summary = each.select("p")[0].text
             except IndexError:
                 summary = None
-            timestamp = each.select(".timestamp")[0].text
+            try:
+                timestamp = each.select(".timestamp")[0].text
+            except IndexError:
+                timestamp = None
             contents = NewsObject.packContent(summary=summary, timestamp=timestamp)
             news = NewsObject(title, href, contents)
             area_news.append(news)
@@ -119,8 +125,13 @@ def run(existing=None):
 
 if __name__ == "__main__":
     import time
+    from data import dummy_vector
     starttime = time.time()
     newslist = run()
     elapsed = time.time() - starttime
     print("TIME ELAPSED: {};    ARTICLES GOT: {}".format(elapsed, len(newslist)))
-    print("\n\n".join([str(e) for e in newslist]))
+    for news in newslist:
+        news.calculate_weights(dummy_vector)
+    newslist = sorted(newslist, key=lambda news: news.weight, reverse=True)
+    print("\n\n".join(["\n".join([news.title.strip(), news.href, str(news.weight)])
+                    for news in newslist]))
