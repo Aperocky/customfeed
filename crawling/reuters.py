@@ -102,7 +102,7 @@ def get_content(url):
 
 def add_content_to_news(newsobj):
     href = newsobj.href
-    print("RUNNING THREADPOOL")
+    print("Getting content of news: {}".format(newsobj.title.strip()))
     content = get_content(href)
     newsobj.contents["content"] = content
 
@@ -118,8 +118,8 @@ def run(existing=None):
     print("{} current news articles found".format(len(master_list)))
     # Do not repeat crawled articles.
     if existing is not None:
-        master_list = [art for art in master_list if art.href not in existset]
-    pool = ThreadPool(processes=20) # 20 threads at each time.
+        master_list = [art for art in master_list if art.href not in existing]
+    pool = ThreadPool(processes=20) # 20 threads at each time for contents
     pool.map(add_content_to_news, master_list)
     return master_list
 

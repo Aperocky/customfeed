@@ -21,6 +21,7 @@ class NewsObject:
         self.href = href # Use this as identifier.
         self.contents = contents # Holds whatever attributes that comes in.
         self.created_time = time.time() # remember created time.
+        self.weight_set = False # weight not necessarily set.
         self.weight = 0
 
     @staticmethod
@@ -42,6 +43,9 @@ class NewsObject:
         selfstr = [e for e in selfstr if e is not None]
         return "\n".join(selfstr)
 
+    def __gt__(self, other): # For sorting
+        return self.weight > other.weight
+
     def flatten_content(self):
         return "\n".join(self.contents["content"])
 
@@ -59,6 +63,16 @@ class NewsObject:
         for k in delkeys: del dc[k]
         keywords = [x[0] for x in dc.most_common(5)]
         self.contents["keywords"] = keywords
+
+    def tojson(self):
+        rest = {
+            "title": self.title,
+            "href": self.href,
+            "importance": self.weight,
+            # save follow for later
+            # "content": self.contents
+        }
+        return rest
 
     def calculate_weights(self, vector, sectionimportance=None):
         """
@@ -91,4 +105,5 @@ class NewsObject:
         weight += sectionimportance["title"] * applywordvec(self.title, vector)
         weight += sectionimportance["summary"] * applywordvec(self.contents["summary"], vector)
         weight += sectionimportance["content"] * applywordvec(self.flatten_content(), vector)
+        self.weight_set = True
         self.weight = weight
