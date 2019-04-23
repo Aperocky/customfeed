@@ -29,6 +29,7 @@ class Feeder:
         for news in self.queue.values():
             if not news.weight_set:
                 news.calculate_weights(dummy_vector)
+            news.set_time_adjusted_weights()
 
     def purge(self): # Purges older news.
         def purgefunc(news):
@@ -41,10 +42,8 @@ class Feeder:
         # Test the Feeder object.
         self.test_counter += 1
         timestr = str(int(time.time()))
-        if not self.test_counter % 2:
-            articles = [(e.title, e.href, len(e.contents["content"]))
-                        for e in self.queue.values()]
-            json.dump(articles, open("testdir/test_{}_{}".format(self.test_counter, timestr), "w"))
+        if not self.test_counter % 5:
+            json.dump(self.sortedqueue(), open("testdir/test_{}_{}".format(self.test_counter, timestr), "w"))
 
     def sortedqueue(self):
         # return a sorted list of queue (not too large, should be easy to sort)

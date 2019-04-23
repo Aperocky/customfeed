@@ -1,17 +1,8 @@
 # Define common function and data structures.
 import time
-import requests
 import re
 import math
 from collections import Counter
-from bs4 import BeautifulSoup
-
-header = {'User-Agent':"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0. 2357.134 Safari/537.36"}
-
-def get_soup(url):
-    r = requests.get(url, headers=header)
-    soup = BeautifulSoup(r.content, "html.parser")
-    return soup
 
 class NewsObject:
 
@@ -22,7 +13,10 @@ class NewsObject:
         self.contents = contents # Holds whatever attributes that comes in.
         self.created_time = time.time() # remember created time.
         self.weight_set = False # weight not necessarily set.
+        # default weight (not time adjusted, certain source
+        # can have greater weight by default)
         self.weight = 0
+        self.time_adjusted_weight = 0
 
     @staticmethod
     def packContent(summary=None, content=None, timestamp=None, **kwargs):
@@ -44,7 +38,7 @@ class NewsObject:
         return "\n".join(selfstr)
 
     def __gt__(self, other): # For sorting
-        return self.weight > other.weight
+        return self.time_adjusted_weight > other.time_adjusted_weight
 
     def flatten_content(self):
         return "\n".join(self.contents["content"])
@@ -68,11 +62,17 @@ class NewsObject:
         rest = {
             "title": self.title,
             "href": self.href,
-            "importance": self.weight,
-            # save follow for later
-            # "content": self.contents
+            "importance": "{0:.2f}".format(self.time_adjusted_weight),
+            "static_importance": "{0:.2f}".format(self.weight),
+            "summary": self.contents["summary"] or ""
         }
         return rest
+
+    def set_time_adjusted_weights(self):
+        elapsed = (time.time() - self.created_time)/60 # minutes
+        # LOG IT!
+        time_weight = 8 - math.log(elapsed+1) * 2 # becomes negative after 60 minutes
+        self.time_adjusted_weight = self.weight + time_weight
 
     def calculate_weights(self, vector, sectionimportance=None):
         """

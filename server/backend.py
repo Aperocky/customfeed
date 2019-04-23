@@ -18,7 +18,7 @@ def runfeeder():
 
 def feedworker():
     print("STARTING FEEDWORKER")
-    while True:
+    while True: # background thread. never stop updating
         runfeeder()
         time.sleep(60)
 
@@ -32,6 +32,12 @@ def runbackground():
 def jsonlist():
     queue = feeder.sortedqueue()
     return jsonify(queue)
+
+@app.route("/", methods=["GET"])
+def index():
+    queue = feeder.sortedqueue()
+    print("QUEUE LENGTH: {}".format(len(queue)))
+    return render_template("queue.html", queue=queue)
 
 if __name__ == "__main__":
     runbackground()

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% for element in queue %}
+
+<div class="newscard">
+  <div class="panel panel-body">
+    <a href="{{element.href}}"><h4>{{element.title}}</h4></a>
+    <br />
+    <div class="row">
+      <div class="col-8">
+        <p>{{element.summary}}</p>
+      </div>
+      <div class="col-4">
+        <p>Weight: {{element.importance}}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endfor %}
+
+{% endblock %}

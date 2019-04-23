@@ -1,7 +1,8 @@
 # GET REUTERS SOURCE.
 import sys
 sys.path.append("..") # To run main test.
-from utils import NewsObject, get_soup
+from crawling.utils import get_soup
+from newsobject import NewsObject
 from multiprocessing.pool import ThreadPool
 
 REUTER_MARKET = "https://www.reuters.com/finance/markets"
