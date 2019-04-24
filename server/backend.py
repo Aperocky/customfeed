@@ -36,6 +36,9 @@ def jsonlist():
 @app.route("/", methods=["GET"])
 def index():
     queue = feeder.sortedqueue()
+    for element in queue:
+        if len(element["summary"].split()) > 50:
+            element["summary"] = " ".join(element["summary"].split()[:50]) + " ..."
     print("QUEUE LENGTH: {}".format(len(queue)))
     return render_template("queue.html", queue=queue)
 
